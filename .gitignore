@@ -35,6 +35,16 @@ build/
 .npm/
 *.log
 
+## Database files
+*.mdf
+*.ldf
+*.ndf
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.bak
+
 ## OS Files
 Thumbs.db
 ehthumbs.db
