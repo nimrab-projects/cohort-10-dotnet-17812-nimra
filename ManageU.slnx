@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ManageU.Api/ManageU.Api.csproj" />
+    <Project Path="src/ManageU.Application/ManageU.Application.csproj" />
+    <Project Path="src/ManageU.Core/ManageU.Core.csproj" />
+    <Project Path="src/ManageU.Infrastructure/ManageU.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ManageU.Tests/ManageU.Tests.csproj" />
+  </Folder>
+</Solution>

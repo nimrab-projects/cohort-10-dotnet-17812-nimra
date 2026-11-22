@@ -1,2 +1,5 @@
-# cohort-10-dotnet-17812-nimra
-Cohort 10 — .NET Fullstack (.NET+ReactJS) assignment for Nimra Babar
+# ManageU – Smart Task Management System
+
+> **Manage Your Work. Your Way.**
+
+Task and Project Management System built with ASP.NET Core (.NET 10) and React.js.
