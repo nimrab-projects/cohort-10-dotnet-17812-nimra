@@ -25,8 +25,11 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
-## User Secrets
+## User Secrets & Environment
 secrets.json
+.env
+.env.*
+!.env.example
 
 ## Node & Web
 node_modules/
@@ -42,12 +45,19 @@ build/
 *.db
 *.db-shm
 *.db-wal
+*.db-journal
 *.sqlite
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+*.sqlite3-journal
 *.bak
 
-## OS Files
+## OS & Temporary Files
 Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 .DS_Store
+*.tmp
+*.temp
