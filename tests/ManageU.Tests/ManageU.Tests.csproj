@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\ManageU.Application\ManageU.Application.csproj" />
     <ProjectReference Include="..\..\src\ManageU.Infrastructure\ManageU.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\ManageU.Api\ManageU.Api.csproj" />
   </ItemGroup>
 
 </Project>

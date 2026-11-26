@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using ManageU.Application.Common.Exceptions;
 
 namespace ManageU.Api.Middleware;
 
@@ -23,7 +24,7 @@ public class GlobalExceptionMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception occurred: {Message}", ex.Message);
+            _logger.LogError(ex, "Exception occurred during request execution: {Message}", ex.Message);
             await HandleExceptionAsync(context, ex);
         }
     }
@@ -31,13 +32,50 @@ public class GlobalExceptionMiddleware
     private static Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         context.Response.ContentType = "application/problem+json";
-        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+
+        var statusCode = exception switch
+        {
+            ValidationException => (int)HttpStatusCode.BadRequest,
+            UnauthorizedException => (int)HttpStatusCode.Unauthorized,
+            ConflictException => (int)HttpStatusCode.Conflict,
+            KeyNotFoundException => (int)HttpStatusCode.NotFound,
+            ArgumentException => (int)HttpStatusCode.BadRequest,
+            _ => (int)HttpStatusCode.InternalServerError
+        };
+
+        context.Response.StatusCode = statusCode;
+
+        var title = exception switch
+        {
+            ValidationException => "Validation failure",
+            UnauthorizedException => "Unauthorized",
+            ConflictException => "Conflict",
+            KeyNotFoundException => "Resource not found",
+            ArgumentException => "Invalid request argument",
+            _ => "An unexpected error occurred"
+        };
+
+        if (exception is ValidationException validationException)
+        {
+            var validationProblemDetails = new ValidationProblemDetails(validationException.Errors)
+            {
+                Status = statusCode,
+                Title = title,
+                Detail = validationException.Message,
+                Instance = context.Request.Path
+            };
+
+            var validationJson = JsonSerializer.Serialize(validationProblemDetails);
+            return context.Response.WriteAsync(validationJson);
+        }
 
         var problemDetails = new ProblemDetails
         {
-            Status = context.Response.StatusCode,
-            Title = "An unexpected error occurred",
-            Detail = exception.Message,
+            Status = statusCode,
+            Title = title,
+            Detail = statusCode == (int)HttpStatusCode.InternalServerError
+                ? "An unexpected error occurred while processing your request."
+                : exception.Message,
             Instance = context.Request.Path
         };
 
