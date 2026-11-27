@@ -1,6 +1,12 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using ManageU.Api.Middleware;
+using ManageU.Application.Common.Interfaces;
+using ManageU.Core.Constants;
 using ManageU.Infrastructure;
+using ManageU.Infrastructure.Authentication;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -28,10 +34,54 @@ try
             retainedFileCountLimit: 14));
 
     builder.Services.AddInfrastructureServices(builder.Configuration);
+
+    var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
+        ?? throw new InvalidOperationException("JwtSettings section is missing from configuration.");
+
+    if (string.IsNullOrWhiteSpace(jwtSettings.Secret))
+    {
+        throw new InvalidOperationException("JwtSettings:Secret must be configured via User Secrets or environment variables.");
+    }
+
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtSettings.Audience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+    builder.Services.AddAuthorization(options =>
+    {
+        options.AddPolicy("RequireAdminRole", policy => policy.RequireRole(Roles.Admin));
+        options.AddPolicy("RequireUserRole", policy => policy.RequireRole(Roles.User));
+    });
+
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
 
     var app = builder.Build();
+
+    // Seed initial roles idempotently on startup
+    using (var scope = app.Services.CreateScope())
+    {
+        var seeder = scope.ServiceProvider.GetRequiredService<IIdentitySeeder>();
+        await seeder.SeedAsync();
+    }
 
     app.UseMiddleware<GlobalExceptionMiddleware>();
 
